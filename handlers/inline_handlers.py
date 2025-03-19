@@ -1,6 +1,6 @@
 from aiogram import types, Router
 from keyboards.inline_keyboards import get_inline_test_2
-from keyboards.inline_keyboards import get_inline_test
+from keyboards.inline_keyboards import get_inline_keyboard
 
 router = Router()
 

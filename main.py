@@ -11,7 +11,7 @@ from aiogram.filters import CommandStart
 from aiogram.types import Message
 
 # keyboards
-from keyboards.reply_keyboards import get_main_keyboard
+from keyboards.reply_keyboards import get_main_test
 from handlers import register_handlers
 
 
@@ -26,7 +26,7 @@ register_handlers(dp)
 
 @dp.message(CommandStart())
 async def command_start_handler(message: Message) -> None:
-    await message.answer(f"Hello, {html.bold(message.from_user.full_name)}!", reply_markup=get_main_keyboard())
+    await message.answer(f"Hello, {html.bold(message.from_user.full_name)}!", reply_markup=get_main_test())
 
 
 # @dp.message()

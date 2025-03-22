@@ -4,16 +4,20 @@ import logging
 import sys
 from os import getenv
 
+from aiogram.fsm.storage.memory import MemoryStorage
 from aiogram import Bot, Dispatcher, html
 from aiogram.client.default import DefaultBotProperties
 from aiogram.enums import ParseMode
 from aiogram.filters import CommandStart
 from aiogram.types import Message
-
+from aiogram import Bot, Dispatcher
+from handlers import task_handlers
 # keyboards
 from keyboards.reply_keyboards import get_main_test
 from handlers import register_handlers
 
+storage = MemoryStorage()
+dp = Dispatcher(storage=storage)
 
 # Bot token can be obtained via https://t.me/BotFather
 TOKEN = getenv("BOT_TOKEN")
@@ -55,3 +59,9 @@ async def main() -> None:
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO, stream=sys.stdout)
     asyncio.run(main())
+
+
+bot = Bot(token='7745283882:AAGIwwhs6gvTY4gdwuCk54FjSzBatjKAGXc')
+dp = Dispatcher()
+
+dp.include_router(task_handlers.router)

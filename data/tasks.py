@@ -31,7 +31,7 @@ tasks = [
         "title": "Випити вітаміни",
         "description": "Випити вітаміни після сніданку",
         "completed": False,
-        "due_date": "2025-03-20",
+        "due_date": "2025-03-20-08:00",  # Додано час
         "priority": "low"
     },
     {
@@ -39,7 +39,7 @@ tasks = [
         "title": "Здати контрольну роботу",
         "description": "Завершити та завантажити контрольну роботу до системи",
         "completed": False,
-        "due_date": "2025-03-21",
+        "due_date": "2025-03-21-23:59",  # Додано час
         "priority": "high"
     },
     {
@@ -47,7 +47,7 @@ tasks = [
         "title": "Вивчити вірш",
         "description": "Вивчити вірш до уроку літератури",
         "completed": False,
-        "due_date": "2025-03-22",
+        "due_date": "2025-03-22-10:00",  # Додано час
         "priority": "medium"
     },
     {
@@ -55,8 +55,36 @@ tasks = [
         "title": "Зустріч з другом",
         "description": "Піти на каву о 17:00",
         "completed": False,
-        "due_date": "2025-03-23",
+        "due_date": "2025-03-23-17:00",  # Додано час
         "priority": "low"
     }
 ]
+
+
+
+# import json
+# from datetime import datetime
+#
+# TASKS_FILE = "data/tasks.json"
+#
+# def get_tasks():
+#     try:
+#         with open(TASKS_FILE, "r", encoding="utf-8") as file:
+#             tasks = json.load(file)
+#         return tasks
+#     except Exception as e:
+#         print(f"Помилка при отриманні задач: {e}")
+#         return []
+#
+# def update_overdue_tasks():
+#     tasks = get_tasks()  # Отримуємо задачі
+#     today = datetime.today().date()
+#
+#     for task in tasks:
+#         due_date = datetime.strptime(task["due_date"], "%Y-%m-%d").date()
+#         task["overdue"] = due_date < today
+#
+#     with open(TASKS_FILE, "w", encoding="utf-8") as file:
+#         json.dump(tasks, file, indent=4, ensure_ascii=False)
+
 

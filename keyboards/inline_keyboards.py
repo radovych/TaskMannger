@@ -2,6 +2,7 @@
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 from data.tasks import tasks
 
+
 def get_task_list_keyboard() -> InlineKeyboardMarkup:
     keyboard = []
 
@@ -50,3 +51,20 @@ def get_delete_task_keyboard() -> InlineKeyboardMarkup:
         InlineKeyboardButton(text="ℹ️ Про нас", callback_data="nnn_company")
     ])
     return InlineKeyboardMarkup(inline_keyboard=buttons)
+
+
+def get_main_menu_keyboard() -> InlineKeyboardMarkup:
+    completed_count = sum(1 for task in tasks if task.get("completed"))
+    complete_button_text = f"✅ Завершені ({completed_count})" if completed_count > 0 else "✅ Завершити завдання"
+
+    keyboard = [
+        [InlineKeyboardButton(text="📋 Список завдань", callback_data="test_btn_1")],
+        [InlineKeyboardButton(text="➕ Додати завдання", callback_data="add_task")],
+        [InlineKeyboardButton(text=complete_button_text, callback_data="complete_task")],
+        [InlineKeyboardButton(text="📌 Не виконані завдання", callback_data="incomplete_tasks")],
+        [InlineKeyboardButton(text="🗑 Видалити завдання", callback_data="delete_task")],
+        [InlineKeyboardButton(text="ℹ️ Про нас", callback_data="nnn_company")]
+    ]
+    return InlineKeyboardMarkup(inline_keyboard=keyboard)
+
+

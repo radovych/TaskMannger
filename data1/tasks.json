@@ -5,7 +5,8 @@
         "description": "Випити вітаміни після сніданку",
         "completed": false,
         "due_date": "2025-03-20",
-        "priority": "low"
+        "priority": "low",
+        "overdue": true
     },
     {
         "id": 2,
@@ -13,7 +14,8 @@
         "description": "Завершити та завантажити контрольну роботу до системи",
         "completed": false,
         "due_date": "2025-03-21",
-        "priority": "high"
+        "priority": "high",
+        "overdue": true
     },
     {
         "id": 3,
@@ -21,7 +23,8 @@
         "description": "Вивчити вірш до уроку літератури",
         "completed": false,
         "due_date": "2025-03-22",
-        "priority": "medium"
+        "priority": "medium",
+        "overdue": true
     },
     {
         "id": 4,
@@ -29,6 +32,8 @@
         "description": "Піти на каву о 17:00",
         "completed": false,
         "due_date": "2025-03-23",
-        "priority": "low"
+        "priority": "low",
+        "overdue": true
     }
 ]
+

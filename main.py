@@ -13,9 +13,14 @@ from aiogram.types import Message
 from aiogram import Bot, Dispatcher
 from handlers import task_handlers
 
+import asyncio
+from reminders.reminders import check_deadlines
 from keyboards.reply_keyboards import get_main_test
 from handlers import register_handlers
-
+import asyncio
+import time
+import asyncio
+from scheduler import schedule_task_updates
 storage = MemoryStorage()
 dp = Dispatcher(storage=storage)
 
@@ -47,3 +52,15 @@ bot = Bot(token='7745283882:AAGIwwhs6gvTY4gdwuCk54FjSzBatjKAGXc')
 dp = Dispatcher()
 
 dp.include_router(task_handlers.router)
+
+async def main():
+    asyncio.create_task(check_deadlines())  # Запускаємо перевірку дедлайнів у фоні
+    await dp.start_polling(bot)
+
+asyncio.run(main())
+
+async def main():
+    asyncio.create_task(schedule_task_updates())  # Запускаємо перевірку дедлайнів
+    # Інші частини коду для бота...
+
+asyncio.run(main())

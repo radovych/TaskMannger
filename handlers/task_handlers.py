@@ -42,10 +42,10 @@ async def show_task_details(callback_query: types.CallbackQuery):
         text = (
             f"📌 *{task['title']}*\n\n"
             f"{task['description']}\n\n"
-            f"📅 Дата: {task['due_date']}\n"
+            f"📅 Дата: {task['due_date']}\n"  # Дата вже включає годину та хвилини
             f"⚡ Пріоритет: {task['priority']}"
         )
-        keyboard = InlineKeyboardMarkup(inline_keyboard=[
+        keyboard = InlineKeyboardMarkup(inline_keyboard=[  # Кнопки для редагування/видалення
             [InlineKeyboardButton(text="✏ Редагувати", callback_data=f"edit_task_{task_id}")],
             [InlineKeyboardButton(text="🗑 Видалити", callback_data=f"delete_{task_id}")],
             [InlineKeyboardButton(text="⬅ Назад", callback_data="test_btn_1")]
@@ -55,6 +55,7 @@ async def show_task_details(callback_query: types.CallbackQuery):
             parse_mode="Markdown",
             reply_markup=keyboard
         )
+
 
 # === Почати редагування завдання ===
 @router.callback_query(F.data.startswith("edit_task_"))
@@ -126,7 +127,7 @@ async def task_title_entered(message: Message, state: FSMContext):
 @router.message(AddTaskState.waiting_for_description)
 async def task_description_entered(message: Message, state: FSMContext):
     await state.update_data(description=message.text)
-    await message.answer("📅 Введіть дату дедлайну (у форматі РРРР-ММ-ДД):")
+    await message.answer("📅 Введіть дату дедлайну (у форматі РРРР-ММ-ДД-HH:mm):")
     await state.set_state(AddTaskState.waiting_for_due_date)
 
 @router.message(AddTaskState.waiting_for_due_date)
@@ -181,7 +182,7 @@ async def delete_task(callback_query: types.CallbackQuery):
 @router.callback_query(F.data == "nnn_company")
 async def about_company(callback_query: types.CallbackQuery):
     text = ("ℹ️ *Про нас*\n\nnnn\\_company"
-            "   & inst:nazark0wx")
+            "   \n& inst:nazark0wx")
 
     await callback_query.message.edit_text(
         text,
@@ -189,15 +190,15 @@ async def about_company(callback_query: types.CallbackQuery):
         reply_markup=get_main_menu_keyboard()
     )
 
-
 def get_task_list_keyboard() -> InlineKeyboardMarkup:
     priority_order = {"high": 3, "medium": 2, "low": 1}
     sorted_tasks = sorted(tasks, key=lambda x: priority_order.get(x["priority"], 0), reverse=True)
 
     keyboard = []
     for task in sorted_tasks:
+        # Оновлюємо формат кнопки, щоб вказати точний час
         keyboard.append([
-            InlineKeyboardButton(text=f"📌 {task['title']} (⚡ {task['priority']})", callback_data=f"task_{task['id']}")
+            InlineKeyboardButton(text=f"📌 {task['title']} (⚡ {task['priority']} - {task['due_date']})", callback_data=f"task_{task['id']}")
         ])
 
     keyboard.append([
@@ -229,3 +230,87 @@ async def delete_task_handler(callback_query: types.CallbackQuery):
         reply_markup=get_task_list_keyboard()
     )
 
+
+
+
+# === Завершення завдання ===
+@router.callback_query(F.data.startswith("complete_task_"))
+async def complete_task(callback_query: types.CallbackQuery):
+    task_id = int(callback_query.data.split("_")[2])
+    task = next((t for t in tasks if t["id"] == task_id), None)
+
+    if task:
+        task["completed"] = True  # Позначаємо завдання як виконане
+        await callback_query.message.edit_text(
+            f"✅ Завдання \"{task['title']}\" завершено!",
+            reply_markup=get_task_list_keyboard()
+        )
+    else:
+        await callback_query.message.answer("❌ Помилка: завдання не знайдено.")
+
+# === Відображення завершених завдань ===
+@router.callback_query(F.data == "completed_tasks")
+async def show_completed_tasks(callback_query: types.CallbackQuery):
+    completed = [task for task in tasks if task.get("completed")]
+
+    if not completed:
+        await callback_query.message.answer("❌ Немає завершених завдань.")
+        return
+
+    keyboard = InlineKeyboardMarkup(inline_keyboard=[
+        [InlineKeyboardButton(text=task["title"], callback_data=f"task_{task['id']}")] for task in completed
+    ] + [[InlineKeyboardButton(text="⬅ Назад", callback_data="back_to_main")]])
+
+    await callback_query.message.edit_text("✅ *Завершені завдання:*", parse_mode="Markdown", reply_markup=keyboard)
+
+
+# === Вибір завдання для завершення ===
+@router.callback_query(F.data == "complete_task")
+async def choose_task_to_complete(callback_query: types.CallbackQuery):
+    incomplete_tasks = [task for task in tasks if not task.get("completed")]
+
+    if not incomplete_tasks:
+        await callback_query.message.answer("✅ Всі завдання виконані!")
+        return
+
+    keyboard = InlineKeyboardMarkup(inline_keyboard=[
+        [InlineKeyboardButton(text=f"📌 {task['title']}", callback_data=f"complete_task_{task['id']}")] for task in incomplete_tasks
+    ] + [[InlineKeyboardButton(text="⬅ Назад", callback_data="back_to_main")]])
+
+    await callback_query.message.edit_text("📝 *Оберіть завдання для завершення:*", parse_mode="Markdown", reply_markup=keyboard)
+
+# === Позначення завдання як завершеного ===
+@router.callback_query(F.data.startswith("complete_task_"))
+async def complete_task(callback_query: types.CallbackQuery):
+    task_id = int(callback_query.data.split("_")[2])
+    task = next((t for t in tasks if t["id"] == task_id), None)
+
+    if task:
+        task["completed"] = True  # Позначаємо завдання як виконане
+        await callback_query.message.edit_text(
+            f"✅ Завдання \"{task['title']}\" завершено!",
+            reply_markup=get_main_menu_keyboard()
+        )
+    else:
+        await callback_query.message.answer("❌ Помилка: завдання не знайдено.")
+
+
+@router.callback_query(F.data == "incomplete_tasks")
+async def show_incomplete_tasks(callback_query: types.CallbackQuery):
+    incomplete = [task for task in tasks if not task.get("completed")]
+
+    if not incomplete:
+        await callback_query.message.answer("✅ Всі завдання виконані!")
+        return
+
+    keyboard = InlineKeyboardMarkup(inline_keyboard=[
+        [InlineKeyboardButton(text=f"📌 {task['title']}", callback_data=f"task_{task['id']}")] for task in incomplete
+    ] + [[InlineKeyboardButton(text="⬅ Назад", callback_data="back_to_main")]])
+
+    await callback_query.message.edit_text("📌 *Не виконані завдання:*", parse_mode="Markdown", reply_markup=keyboard)
+
+@router.message(AddTaskState.waiting_for_due_date)
+async def task_due_date_entered(message: Message, state: FSMContext):
+    await state.update_data(due_date=message.text)  # Новий формат дедлайну з часом
+    await message.answer("⚡ Введіть пріоритет (low, medium або high):")
+    await state.set_state(AddTaskState.waiting_for_priority)

@@ -1,27 +1,27 @@
-# import json
-# import os
-#
-# TASKS_FILE_PATH = 'data/tasks.json'
-#
-# def load_tasks():
-#     if os.path.exists(TASKS_FILE_PATH):
-#         with open(TASKS_FILE_PATH, 'r', encoding='utf-8') as f:
-#             return json.load(f)
-#     return []
-#
-# def save_tasks(tasks):
-#     with open(TASKS_FILE_PATH, 'w', encoding='utf-8') as f:
-#         json.dump(tasks, f, ensure_ascii=False, indent=4)
-#
-# def delete_task(task_id):
-#     tasks = load_tasks()
-#     tasks = [task for task in tasks if task["id"] != task_id]
-#
-#     #Онов id після видалення 1.04
-#     for index, task in enumerate(tasks):
-#         task["id"] = index + 1
-#
-#     save_tasks(tasks)
+import json
+import os
+
+TASKS_FILE_PATH = 'data/tasks.json'
+
+def load_tasks():
+    if os.path.exists(TASKS_FILE_PATH):
+        with open(TASKS_FILE_PATH, 'r', encoding='utf-8') as f:
+            return json.load(f)
+    return []
+
+def save_tasks(tasks):
+    with open(TASKS_FILE_PATH, 'w', encoding='utf-8') as f:
+        json.dump(tasks, f, ensure_ascii=False, indent=4)
+
+def delete_task(task_id):
+    tasks = load_tasks()
+    tasks = [task for task in tasks if task["id"] != task_id]
+
+    #Онов id після видалення 1.04
+    for index, task in enumerate(tasks):
+        task["id"] = index + 1
+
+    save_tasks(tasks)
 
 
 

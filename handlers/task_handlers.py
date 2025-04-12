@@ -314,3 +314,70 @@ async def task_due_date_entered(message: Message, state: FSMContext):
     await state.update_data(due_date=message.text)  # Новий формат дедлайну з часом
     await message.answer("⚡ Введіть пріоритет (low, medium або high):")
     await state.set_state(AddTaskState.waiting_for_priority)
+
+
+
+
+@router.message(F.text == "ℹ️ Про нас")
+async def about_us_handler(message: Message):
+    await message.answer("Ми — команда, яка створила цього бота 💬\nЗв'яжіться з нами: @nazark0wxx")
+
+
+from states import AddTask
+@router.message(F.text == "➕ Додати завдання")
+async def add_task_start(message: Message, state: FSMContext):
+    await message.answer("Введіть назву завдання:")
+    await state.set_state(AddTask.waiting_for_title)
+
+@router.message(AddTask.waiting_for_title)
+async def process_title(message: Message, state: FSMContext):
+    title = message.text.strip()
+    if not title:
+        await message.answer("Назва не може бути порожньою. Спробуйте ще раз:")
+        return
+    if len(title) > 100:
+        await message.answer("Назва занадто довга. Максимум 100 символів. Спробуйте ще раз:")
+        return
+    await state.update_data(title=title)
+    await message.answer("Введіть опис завдання:")
+    await state.set_state(AddTask.waiting_for_description)
+
+@router.message(AddTask.waiting_for_description)
+async def process_description(message: Message, state: FSMContext):
+    description = message.text.strip()
+    if not description:
+        await message.answer("Опис не може бути порожнім. Спробуйте ще раз:")
+        return
+    if len(description) > 300:
+        await message.answer("Опис занадто довгий. Максимум 300 символів. Спробуйте ще раз:")
+        return
+    data = await state.get_data()
+    title = data['title']
+    # Тут можна зберегти завдання у базу даних або список
+    await message.answer(f"Завдання '{title}' успішно додано!")
+    await state.clear()
+
+# task_handlers.py
+from aiogram import types
+from aiogram.fsm.context import FSMContext
+from aiogram.types import Message
+from states import AddTask
+
+@router.message(AddTask.waiting_for_description)
+async def process_description(message: Message, state: FSMContext):
+    description = message.text.strip()
+
+    # Перевірка на порожній опис
+    if not description:
+        await message.answer("Опис не може бути порожнім. Спробуйте ще раз:")
+        return
+
+    # Перевірка на максимальну довжину опису (300 символів)
+    if len(description) > 300:
+        await message.answer("Опис занадто довгий. Максимум 300 символів. Спробуйте ще раз:")
+        return
+
+    # Зберігаємо опис і переходимо до наступного кроку (наприклад, вибір дедлайну)
+    await state.update_data(description=description)
+    await message.answer("📅 Введіть дату дедлайну (у форматі РРРР-ММ-ДД):")
+    await state.set_state(AddTask.waiting_for_deadline)

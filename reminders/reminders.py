@@ -124,6 +124,4 @@ async def send_reminder(task, user_id):
 async def start_reminder_service():
     asyncio.create_task(check_deadlines())  # Створення фонової задачі для перевірки дедлайнів
 
-# Запуск перевірки дедлайнів
-asyncio.run(start_reminder_service())
 

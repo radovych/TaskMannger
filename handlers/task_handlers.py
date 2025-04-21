@@ -4,9 +4,11 @@ from aiogram import types, Router, F
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
 from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup, Message
+import re
 from keyboards.inline_keyboards import get_task_list_keyboard, get_main_menu_keyboard, get_delete_task_keyboard
 from data.tasks import tasks
-# from data.tasks import load_tasks, save_tasks
+from utils import validate_deadline
+
 
 router = Router()
 
@@ -178,18 +180,6 @@ async def delete_task(callback_query: types.CallbackQuery):
     print(tasks)
 
 
-# === Обробка натискання кнопки "ℹ️ Про нас" ===
-@router.callback_query(F.data == "nnn_company")
-async def about_company(callback_query: types.CallbackQuery):
-    text = ("ℹ️ *Про нас*\n\nnnn\\_company"
-            "   \n& inst:nazark0wx")
-
-    await callback_query.message.edit_text(
-        text,
-        parse_mode="MarkdownV2",
-        reply_markup=get_main_menu_keyboard()
-    )
-
 def get_task_list_keyboard() -> InlineKeyboardMarkup:
     priority_order = {"high": 3, "medium": 2, "low": 1}
     sorted_tasks = sorted(tasks, key=lambda x: priority_order.get(x["priority"], 0), reverse=True)
@@ -204,9 +194,7 @@ def get_task_list_keyboard() -> InlineKeyboardMarkup:
     keyboard.append([
         InlineKeyboardButton(text="⬅ Назад", callback_data="back_to_main")
     ])
-    keyboard.append([
-        InlineKeyboardButton(text="ℹ️ Про нас", callback_data="nnn_company")
-    ])
+
 
     return InlineKeyboardMarkup(inline_keyboard=keyboard)
 
@@ -317,67 +305,143 @@ async def task_due_date_entered(message: Message, state: FSMContext):
 
 
 
-
 @router.message(F.text == "ℹ️ Про нас")
 async def about_us_handler(message: Message):
     await message.answer("Ми — команда, яка створила цього бота 💬\nЗв'яжіться з нами: @nazark0wxx")
 
+from datetime import datetime
 
-from states import AddTask
-@router.message(F.text == "➕ Додати завдання")
-async def add_task_start(message: Message, state: FSMContext):
-    await message.answer("Введіть назву завдання:")
-    await state.set_state(AddTask.waiting_for_title)
 
-@router.message(AddTask.waiting_for_title)
-async def process_title(message: Message, state: FSMContext):
+
+# Перевірка формату дати
+def validate_due_date(due_date: str) -> bool:
+    # Перевірка формату дати "YYYY-MM-DD-HH:mm"
+    if not re.match(r"^\d{4}-\d{2}-\d{2}-\d{2}:\d{2}$", due_date):
+        return False
+    try:
+        # Перевірка, чи дата не в минулому
+        deadline = datetime.strptime(due_date, "%Y-%m-%d-%H:%M")
+        if deadline < datetime.now():
+            return False
+    except ValueError:
+        return False
+    return True
+
+# Перевірка пріоритету
+def validate_priority(priority: str) -> bool:
+    return priority.lower() in ["low", "medium", "high"]
+
+# Перевірка довжини тексту
+def validate_length(text: str, max_length: int) -> bool:
+    return len(text) <= max_length
+
+# === Початок додавання нового завдання ===
+@router.callback_query(F.data == "add_task")
+async def start_add_task(callback_query: types.CallbackQuery, state: FSMContext):
+    await callback_query.message.answer("📝 Введіть назву завдання:")
+    await state.set_state(AddTaskState.waiting_for_title)
+
+@router.message(AddTaskState.waiting_for_title)
+async def task_title_entered(message: Message, state: FSMContext):
     title = message.text.strip()
     if not title:
-        await message.answer("Назва не може бути порожньою. Спробуйте ще раз:")
+        await message.answer("❌ Назва завдання не може бути порожньою. Спробуйте ще раз.")
         return
-    if len(title) > 100:
-        await message.answer("Назва занадто довга. Максимум 100 символів. Спробуйте ще раз:")
+    if not validate_length(title, 100):
+        await message.answer("❌ Назва завдання не може перевищувати 100 символів. Спробуйте ще раз.")
         return
     await state.update_data(title=title)
-    await message.answer("Введіть опис завдання:")
-    await state.set_state(AddTask.waiting_for_description)
+    await message.answer("🖊 Введіть опис завдання:")
+    await state.set_state(AddTaskState.waiting_for_description)
 
-@router.message(AddTask.waiting_for_description)
-async def process_description(message: Message, state: FSMContext):
+@router.message(AddTaskState.waiting_for_description)
+async def task_description_entered(message: Message, state: FSMContext):
     description = message.text.strip()
     if not description:
-        await message.answer("Опис не може бути порожнім. Спробуйте ще раз:")
+        await message.answer("❌ Опис завдання не може бути порожнім. Спробуйте ще раз.")
         return
-    if len(description) > 300:
-        await message.answer("Опис занадто довгий. Максимум 300 символів. Спробуйте ще раз:")
+    if not validate_length(description, 500):
+        await message.answer("❌ Опис завдання не може перевищувати 500 символів. Спробуйте ще раз.")
         return
+    await state.update_data(description=description)
+    await message.answer("📅 Введіть дату дедлайну (у форматі РРРР-ММ-ДД-ГГ:хх):")
+    await state.set_state(AddTaskState.waiting_for_due_date)
+
+@router.message(AddTaskState.waiting_for_due_date)
+async def task_due_date_entered(message: Message, state: FSMContext):
+    due_date = message.text.strip()
+    if not validate_due_date(due_date):
+        await message.answer("❌ Невірний формат дати або дата в минулому. Використовуйте формат: РРРР-ММ-ДД-ГГ:хх (наприклад, 2025-04-21-14:30).")
+        return
+    await state.update_data(due_date=due_date)
+    await message.answer("⚡ Введіть пріоритет (low, medium або high):")
+    await state.set_state(AddTaskState.waiting_for_priority)
+
+@router.message(AddTaskState.waiting_for_priority)
+async def task_priority_entered(message: Message, state: FSMContext):
+    priority = message.text.strip().lower()
+    if not validate_priority(priority):
+        await message.answer("❌ Невірний пріоритет. Виберіть один з варіантів: low, medium або high.")
+        return
+    await state.update_data(priority=priority)
     data = await state.get_data()
-    title = data['title']
-    # Тут можна зберегти завдання у базу даних або список
-    await message.answer(f"Завдання '{title}' успішно додано!")
+
+    new_task = {
+        "id": len(tasks) + 1,
+        "title": data['title'],
+        "description": data['description'],
+        "due_date": data['due_date'],
+        "priority": data['priority'],
+        "completed": False
+    }
+    tasks.append(new_task)
+
+    await message.answer("✅ Завдання додано успішно!", reply_markup=get_main_menu_keyboard())
     await state.clear()
 
-# task_handlers.py
+# === Повернення в головне меню ===
+@router.callback_query(F.data == "back_to_main")
+async def back_to_main(callback_query: types.CallbackQuery):
+    await callback_query.message.edit_text(
+        "🔙 *Головне меню:*",
+        parse_mode="Markdown",
+        reply_markup=get_main_menu_keyboard()
+    )
+
+
 from aiogram import types
 from aiogram.fsm.context import FSMContext
-from aiogram.types import Message
-from states import AddTask
+from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
+from aiogram.fsm.context import FSMContext
+from aiogram import Dispatcher
+  # Перевірка введеного дедлайну
 
-@router.message(AddTask.waiting_for_description)
-async def process_description(message: Message, state: FSMContext):
-    description = message.text.strip()
+# Створення хендлерів для додавання завдань
+async def add_task_handler(message: types.Message, state: FSMContext):
+    # Ваша логіка для додавання завдання
+    await message.answer("Введіть заголовок завдання:")
 
-    # Перевірка на порожній опис
-    if not description:
-        await message.answer("Опис не може бути порожнім. Спробуйте ще раз:")
+# Хендлер для введення дедлайну
+async def process_deadline_handler(message: types.Message, state: FSMContext):
+    deadline = message.text.strip()
+    if not validate_deadline(deadline):
+        await message.answer("Невірний формат дати. Введіть дату у форматі YYYY-MM-DD.")
         return
+    # Оновлення стану з введеним дедлайном
+    await state.update_data(deadline=deadline)
+    await message.answer("Дедлайн прийнятий! Введіть пріоритет завдання.")
+    await AddTask.waiting_for_priority.set()
 
-    # Перевірка на максимальну довжину опису (300 символів)
-    if len(description) > 300:
-        await message.answer("Опис занадто довгий. Максимум 300 символів. Спробуйте ще раз:")
-        return
 
-    # Зберігаємо опис і переходимо до наступного кроку (наприклад, вибір дедлайну)
-    await state.update_data(description=description)
-    await message.answer("📅 Введіть дату дедлайну (у форматі РРРР-ММ-ДД):")
-    await state.set_state(AddTask.waiting_for_deadline)
+from aiogram import Dispatcher
+
+# Ваші хендлери, FSM та інше
+
+def register_handlers(dp: Dispatcher):
+    @dp.message_handler(commands=['start'])
+    async def start(message: types.Message):
+        await message.answer("Hello, world!")
+
+
+
+

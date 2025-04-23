@@ -8,6 +8,11 @@ import re
 from keyboards.inline_keyboards import get_task_list_keyboard, get_main_menu_keyboard, get_delete_task_keyboard
 from data.tasks import tasks
 from utils import validate_deadline
+from aiogram import types
+from aiogram.fsm.context import FSMContext
+from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
+from aiogram.fsm.context import FSMContext
+from aiogram import Dispatcher
 
 
 router = Router()
@@ -218,9 +223,6 @@ async def delete_task_handler(callback_query: types.CallbackQuery):
         reply_markup=get_task_list_keyboard()
     )
 
-
-
-
 # === Завершення завдання ===
 @router.callback_query(F.data.startswith("complete_task_"))
 async def complete_task(callback_query: types.CallbackQuery):
@@ -250,7 +252,6 @@ async def show_completed_tasks(callback_query: types.CallbackQuery):
     ] + [[InlineKeyboardButton(text="⬅ Назад", callback_data="back_to_main")]])
 
     await callback_query.message.edit_text("✅ *Завершені завдання:*", parse_mode="Markdown", reply_markup=keyboard)
-
 
 # === Вибір завдання для завершення ===
 @router.callback_query(F.data == "complete_task")
@@ -282,7 +283,6 @@ async def complete_task(callback_query: types.CallbackQuery):
     else:
         await callback_query.message.answer("❌ Помилка: завдання не знайдено.")
 
-
 @router.callback_query(F.data == "incomplete_tasks")
 async def show_incomplete_tasks(callback_query: types.CallbackQuery):
     incomplete = [task for task in tasks if not task.get("completed")]
@@ -303,15 +303,11 @@ async def task_due_date_entered(message: Message, state: FSMContext):
     await message.answer("⚡ Введіть пріоритет (low, medium або high):")
     await state.set_state(AddTaskState.waiting_for_priority)
 
-
-
 @router.message(F.text == "ℹ️ Про нас")
 async def about_us_handler(message: Message):
     await message.answer("Ми — команда, яка створила цього бота 💬\nЗв'яжіться з нами: @nazark0wxx")
 
 from datetime import datetime
-
-
 
 # Перевірка формату дати
 def validate_due_date(due_date: str) -> bool:
@@ -408,14 +404,6 @@ async def back_to_main(callback_query: types.CallbackQuery):
         reply_markup=get_main_menu_keyboard()
     )
 
-
-from aiogram import types
-from aiogram.fsm.context import FSMContext
-from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
-from aiogram.fsm.context import FSMContext
-from aiogram import Dispatcher
-  # Перевірка введеного дедлайну
-
 # Створення хендлерів для додавання завдань
 async def add_task_handler(message: types.Message, state: FSMContext):
     # Ваша логіка для додавання завдання
@@ -433,9 +421,6 @@ async def process_deadline_handler(message: types.Message, state: FSMContext):
     await AddTask.waiting_for_priority.set()
 
 
-from aiogram import Dispatcher
-
-# Ваші хендлери, FSM та інше
 
 def register_handlers(dp: Dispatcher):
     @dp.message_handler(commands=['start'])

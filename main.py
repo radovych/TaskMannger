@@ -1,38 +1,10 @@
 
 
 
-# import logging
-# from aiogram import Bot, Dispatcher
-# from aiogram.contrib.middlewares.logging import LoggingMiddleware
-# from aiogram import executor
-# from handlers import register_handlers
-#
-# API_TOKEN = 'YOUR_BOT_API_TOKEN'
-#
-# logging.basicConfig(level=logging.INFO)
-#
-# bot = Bot(token=API_TOKEN)
-# dp = Dispatcher()
-#
-# # Реєстрація хендлерів
-# register_handlers(dp)
-#
-# dp.middleware.setup(LoggingMiddleware())
-#
-# if __name__ == "__main__":
-#     executor.start_polling(dp, skip_updates=True)
-# # Додайте цю функцію валидації в main.py
-# from datetime import datetime
-#
-# def validate_deadline(deadline_str):
-#     try:
-#         # Перевірка, чи є введений дедлайн коректним
-#         datetime.strptime(deadline_str, "%Y-%m-%d")
-#         return True
-#     except ValueError:
-#         return False
-#
-#
+
+
+
+
 import asyncio
 import logging
 import sys
